@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Web;
 using System.Web.Http;
 using System.Web.Mvc;
+using Microsoft.AspNet.Identity;
 using URLShortener.Models;
 
 namespace URLShortener.Controllers
@@ -30,6 +31,10 @@ namespace URLShortener.Controllers
             if (!ModelState.IsValid)
             {
                 BadRequest();
+            }
+            if (!HasHTTPProtocol(url.OriginalUrl))
+            {
+                url.OriginalUrl = "http://" + url.OriginalUrl;
             }
             int lastEntryId = (from u in _context.Urls
                            orderby u.UrlId descending
@@ -64,6 +69,23 @@ namespace URLShortener.Controllers
         {
             var listOfUrls = _context.Urls.ToList();
             return listOfUrls;
+        }
+
+
+
+
+        public bool HasHTTPProtocol(string url)
+        {
+            url = url.ToLower();
+            if (url.Length > 5)
+            {
+                if (url.StartsWith("http://") || url.StartsWith("https://"))
+                    return true;
+                else
+                    return false;
+            }
+            else
+                return false;
         }
     }
 }
