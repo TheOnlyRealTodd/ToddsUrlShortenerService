@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http;
 using System.Web;
 using System.Web.Http;
 using System.Web.Mvc;
 using Microsoft.AspNet.Identity;
+using URLShortener.Data_Transfer_Objects;
 using URLShortener.Models;
 
 namespace URLShortener.Controllers
@@ -32,7 +34,7 @@ namespace URLShortener.Controllers
             {
                 BadRequest();
             }
-            if (!HasHTTPProtocol(url.OriginalUrl))
+            if (!HasHttpProtocol(url.OriginalUrl))
             {
                 url.OriginalUrl = "http://" + url.OriginalUrl;
             }
@@ -54,7 +56,7 @@ namespace URLShortener.Controllers
             return Ok();
         }
 
-        public IHttpActionResult GetUrl(int id)
+        public IHttpActionResult Get(int id)
         {
             var url = _context.Urls.SingleOrDefault(u => u.UrlId == id);
             if (url == null)
@@ -62,6 +64,21 @@ namespace URLShortener.Controllers
                 NotFound();
             }
             return Ok(url);
+        }
+
+        [System.Web.Http.HttpPut]
+        public IHttpActionResult Update(int id, UrlDto urlDto)
+        {
+            var urlInDb = _context.Urls.SingleOrDefault(u => u.UrlId == id);
+
+            if (urlInDb == null)
+            {
+                return NotFound();
+            }
+            urlInDb.OriginalUrl = urlDto.OriginalUrl;
+            _context.SaveChanges();
+            return Ok(urlDto);
+
         }
         [System.Web.Http.HttpGet]
         
@@ -71,10 +88,30 @@ namespace URLShortener.Controllers
             return listOfUrls;
         }
 
+        [System.Web.Http.HttpDelete]
+        public IHttpActionResult Delete(int id)
+        {
+            var urlInDb = _context.Urls.SingleOrDefault(u => u.UrlId == id);
+
+            if (urlInDb == null)
+            {
+                return NotFound();
+            }
+
+            _context.Urls.Remove(urlInDb);
+            try
+            {
+                _context.SaveChanges();
+                return Ok();
+            }
+            catch(Exception ex)
+            {
+                return InternalServerError(ex);
+            }
+        }
 
 
-
-        public bool HasHTTPProtocol(string url)
+        public bool HasHttpProtocol(string url)
         {
             url = url.ToLower();
             if (url.Length > 5)
