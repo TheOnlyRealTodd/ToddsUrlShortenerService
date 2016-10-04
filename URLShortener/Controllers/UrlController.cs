@@ -8,6 +8,7 @@ using System.Web;
 using System.Web.Http;
 using System.Web.Mvc;
 using Microsoft.AspNet.Identity;
+using URLShortener.Binding_Models;
 using URLShortener.Data_Transfer_Objects;
 using URLShortener.Models;
 
@@ -27,16 +28,16 @@ namespace URLShortener.Controllers
             _context.Dispose();
         }
         [System.Web.Http.HttpPost]
-        public IHttpActionResult Create(Url url)
+        public IHttpActionResult Create(UrlBindingModel urlBindingModel)
         {
             UrlHelper helper = new UrlHelper(HttpContext.Current.Request.RequestContext);
             if (!ModelState.IsValid)
             {
                 BadRequest();
             }
-            if (!HasHttpProtocol(url.OriginalUrl))
+            if (!HasHttpProtocol(urlBindingModel.OriginalUrl))
             {
-                url.OriginalUrl = "http://" + url.OriginalUrl;
+                urlBindingModel.OriginalUrl = "http://" + urlBindingModel.OriginalUrl;
             }
             int lastEntryId = (from u in _context.Urls
                            orderby u.UrlId descending
@@ -45,15 +46,24 @@ namespace URLShortener.Controllers
             {
                 return InternalServerError();
             }
-            url.UrlId = lastEntryId + 1;
-            url.OurUrl = Request.RequestUri.Scheme + "://" + Request.RequestUri.Authority + "/" + url.UrlId;
-
-            _context.Urls.Add(url);
-            _context.SaveChanges();
-
-
+            int newId = lastEntryId + 1;
+            var newUrl = new Url()
+            {
+                OriginalUrl = urlBindingModel.OriginalUrl,
+                OurUrl = Request.RequestUri.Scheme + "://" + Request.RequestUri.Authority + "/" + newId
+            };
             
-            return Ok();
+
+            _context.Urls.Add(newUrl);
+            try //Try to save changes to DB, catch any exceptions. If succcessful, return the new short URL.
+            {
+                _context.SaveChanges();
+                return Created(new Uri(newUrl.OurUrl), newUrl);
+            }
+            catch (Exception ex)
+            {
+                return InternalServerError(ex);
+            }
         }
 
         public IHttpActionResult Get(int id)
@@ -76,8 +86,15 @@ namespace URLShortener.Controllers
                 return NotFound();
             }
             urlInDb.OriginalUrl = urlDto.OriginalUrl;
-            _context.SaveChanges();
-            return Ok(urlDto);
+            try
+            {
+                _context.SaveChanges();
+                return Ok(urlDto);
+            }
+            catch (Exception ex)
+            {
+                return InternalServerError(ex);
+            }
 
         }
         [System.Web.Http.HttpGet]
