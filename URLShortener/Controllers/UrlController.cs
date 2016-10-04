@@ -27,6 +27,7 @@ namespace URLShortener.Controllers
         {
             _context.Dispose();
         }
+        // POST - /api/Url
         [System.Web.Http.HttpPost]
         public IHttpActionResult Create(UrlBindingModel urlBindingModel)
         {
@@ -65,7 +66,7 @@ namespace URLShortener.Controllers
                 return InternalServerError(ex);
             }
         }
-
+        // GET - Gets the Url with the specified id - /api/Url/1
         public IHttpActionResult Get(int id)
         {
             var url = _context.Urls.SingleOrDefault(u => u.UrlId == id);
@@ -75,7 +76,7 @@ namespace URLShortener.Controllers
             }
             return Ok(url);
         }
-
+        // PUT - Updates to a new originalUrl /api/Url/1
         [System.Web.Http.HttpPut]
         public IHttpActionResult Update(int id, UrlDto urlDto)
         {
@@ -98,13 +99,13 @@ namespace URLShortener.Controllers
 
         }
         [System.Web.Http.HttpGet]
-        
+        //GET - List of all URLs in database /api/Url
         public IEnumerable<Url> GetUrls()
         {
             var listOfUrls = _context.Urls.ToList();
             return listOfUrls;
         }
-
+        //DELETE - Deletes the specified URL by id - /api/url/1
         [System.Web.Http.HttpDelete]
         public IHttpActionResult Delete(int id)
         {
@@ -127,7 +128,11 @@ namespace URLShortener.Controllers
             }
         }
 
-
+        /// <summary>
+        /// Checks to see if the given url string contains http or https protocols.
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
         public bool HasHttpProtocol(string url)
         {
             url = url.ToLower();
